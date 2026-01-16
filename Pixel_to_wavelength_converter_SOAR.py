@@ -15,7 +15,7 @@ def pixel_to_lambda(x):
     return slope*x+intercept
 
 # Replace with your actual .fits file path
-fits_file_path = 'wecfzst_0232_178822nd_23-12-2024_445_ws_1.fits'
+fits_file_path = 'File_name.fits'
 
 # Open the .fits file
 with fits.open(fits_file_path) as hdul:
@@ -37,4 +37,4 @@ plt.title('FITS Data Line Plot')
 plt.xlabel('Index')
 plt.ylabel('Value')
 plt.show()
-plt.savefig('wecfzst_0232_178822nd_23-12-2024_445_ws_1.png')
+plt.savefig('File_name.png')
