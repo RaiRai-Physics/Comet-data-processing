@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # === Load the FITS file ===
-hdul = fits.open("wecfzst_0232_178822nd_23-12-2024_445_ws_1.fits")
+hdul = fits.open("File_name.fits")
 data = hdul[0].data
 header = hdul[0].header
 
