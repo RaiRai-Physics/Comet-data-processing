@@ -11,13 +11,13 @@ import astroscrappy
 import matplotlib.pyplot as plt
 
 # Load star
-raw_file = '0232_178822nd_23-12-2024.fits'  # replace with your actual path
+raw_file = 'Your_file.fits'  # replace with your actual path
 with fits.open(raw_file) as hdul:
     raw_data = hdul[0].data
     raw_header = hdul[0].header
 
 # Load lamp
-arc_file = '0229_178822nd_23-12-2024.fits'  # replace with your actual path
+arc_file = 'Lamp_file.fits'  # replace with your actual path
 with fits.open(arc_file) as hdul:
     arc_data = hdul[0].data
 
@@ -37,7 +37,7 @@ cr_mask_arc, cleaned_arc = astroscrappy.detect_cosmics(arc_data,
 final_data = cleaned_raw - cleaned_arc
 
 # Save final cosmic-ray-cleaned and lamp-subtracted image
-final_fits = '0232_178822nd_23-12-2024_cleaned_lamp_subtracted.fits'
+final_fits = 'Cleaned_lamp_subtracted.fits'
 fits.writeto(final_fits, final_data, raw_header, overwrite=True)
 
 # Optional visualization
