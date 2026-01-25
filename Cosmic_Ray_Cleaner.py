@@ -11,7 +11,7 @@ import astroscrappy
 import matplotlib.pyplot as plt
 
 # Load your raw spectroscopy image (FITS file)
-fits_file = '0232_178822nd_23-12-2024.fits'  # replace with your actual file path
+fits_file = 'Your_file.fits'  # replace with your actual file path
 with fits.open(fits_file) as hdul:
     raw_data = hdul[0].data
     header = hdul[0].header
@@ -23,7 +23,7 @@ cr_mask, cleaned_data = astroscrappy.detect_cosmics(raw_data,
                                                      objlim=5.0)
 
 # Save the cleaned image
-cleaned_fits = '0232_178822nd_23-12-2024_cleaned_spectrum_3.0.fits'
+cleaned_fits = 'Cleaned_data.fits'
 fits.writeto(cleaned_fits, cleaned_data, header, overwrite=True)
 
 # Optional: visualize original vs cleaned
