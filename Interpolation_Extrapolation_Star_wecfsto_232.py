@@ -13,7 +13,8 @@ Created on Mon May  5 17:07:19 2025
 
 @author: bmr0043
 """
-"This is for the wecfsto file 0232"
+
+"We are interpolating extrapolating flux value from reference/standard star data to match the wavelength regime with our observation data"
 
 import numpy as np
 import pandas as pd
@@ -22,7 +23,7 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
 # STEP 1: Read your FITS file 
-hdul = fits.open('wecfsto_0232_178822nd_23-12-2024.fits')
+hdul = fits.open('Your_observation_star_data.fits')
 data = hdul[0].data
 header = hdul[0].header
 
@@ -33,7 +34,7 @@ npix = len(data)
 wavelength_star = crval1 + cdelt1 * np.arange(npix)
 
 # STEP 3: Create star flux array (replace with real flux values!)
-df = pd.read_csv("formatted_flux_data.csv")  
+df = pd.read_csv("Standard_Star_data.csv")  
 wavelength = df["Wavelength_A"].values
 flux = df["Flux_erg_cm2_s1_A1"].values
 
@@ -97,5 +98,5 @@ resampled_df = pd.DataFrame({
     "Quadratic_flux": quadratic_flux,
     "Cubic_flux": cubic_flux
 })
-resampled_df.to_csv("Star_Spectrum_interpolated_extrapolated_wecfsto_232.csv", index=False)
+resampled_df.to_csv("Star_Spectrum_interpolated_extrapolated.csv", index=False)
 print("Saved resampled spectrum to 'spectrum_interpolated_extrapolated.csv'")
