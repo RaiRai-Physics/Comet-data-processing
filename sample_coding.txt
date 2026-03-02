@@ -1,0 +1,139 @@
+"""
+End-to-End Reduction Pipeline for Comet Spectroscopy:
+Cosmic Ray Cleaning, Background Subtraction,
+Wavelength Calibration, and 1D Flux Extraction
+"""
+
+from astropy.io import fits
+import astroscrappy
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.ndimage import median_filter, binary_dilation
+
+# ==============================
+# STEP 1: Cosmic Ray Cleaning
+# ==============================
+
+# CONFIGURATION
+input_fits_file = 'input.fits'
+cleaned_output_file = 'input_cleaned.fits'
+
+# Adjustable parameters
+sigclip = 4.5
+sigfrac = 0.3
+objlim = 6.0
+satlevel = 30000
+n_iterations = 1
+comet_threshold_sigma = 3
+
+# Load FITS file
+with fits.open(input_fits_file) as hdul:
+    raw_image_data = hdul[0].data.astype(np.float32)
+    header = hdul[0].header
+
+# Create comet mask
+background_model = median_filter(raw_image_data, size=15)
+residual_image = raw_image_data - background_model
+std_dev = np.std(residual_image)
+mean_val = np.mean(residual_image)
+
+comet_mask = residual_image > (mean_val + comet_threshold_sigma * std_dev)
+comet_mask = binary_dilation(comet_mask, iterations=3)
+
+# Cosmic ray detection
+cleaned_image_data = raw_image_data.copy()
+for _ in range(n_iterations):
+    cr_mask, cleaned_image_data = astroscrappy.detect_cosmics(
+        cleaned_image_data,
+        sigclip=sigclip,
+        sigfrac=sigfrac,
+        objlim=objlim,
+        satlevel=satlevel,
+        inmask=comet_mask
+    )
+
+# Save cleaned file
+fits.writeto(cleaned_output_file, cleaned_image_data, header, overwrite=True)
+
+# Visualization
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+axes[0].imshow(raw_image_data, origin='lower', cmap='gray')
+axes[0].set_title("Original Image")
+
+axes[1].imshow(cleaned_image_data, origin='lower', cmap='gray')
+axes[1].set_title("Cosmic Ray Cleaned Image")
+
+plt.tight_layout()
+plt.show()
+
+
+# ==============================
+# STEP 2: Background Subtraction
+# ==============================
+
+# Load cleaned comet image
+with fits.open('input_cleaned.fits') as comet_hdul:
+    comet_data = comet_hdul[0].data
+    comet_header = comet_hdul[0].header
+
+# Exposure time
+comet_exptime = comet_header.get("EXPTIME") or comet_header.get("EXPOSURE")
+if comet_exptime is None:
+    raise ValueError("Exposure time not found in comet FITS header.")
+
+# Load cleaned background image
+with fits.open('background_clean.fits') as background_hdul:
+    background_data = background_hdul[0].data
+    background_header = background_hdul[0].header
+
+background_exptime = background_header.get("EXPTIME") or background_header.get("EXPOSURE")
+if background_exptime is None:
+    raise ValueError("Exposure time not found in background FITS header.")
+
+# Normalize by exposure time
+comet_flux_per_sec = comet_data / comet_exptime
+background_flux_per_sec = background_data / background_exptime
+
+# Subtract background
+background_subtracted_data = comet_flux_per_sec - background_flux_per_sec
+
+# Save result
+fits.writeto(
+    'input_cleaned_background_subtracted.fits',
+    background_subtracted_data,
+    comet_header,
+    overwrite=True
+)
+
+
+# ==============================
+# STEP 3: Wavelength Calibration and 1D Extraction
+# ==============================
+
+with fits.open('input_cleaned_background_subtracted.fits') as hdul:
+    science_data = hdul[0].data
+    header = hdul[0].header
+
+# Extract 1D spectrum by summing spatial axis
+summed_spectrum = np.sum(science_data, axis=0)
+
+# Linear wavelength solution
+crval1 = 3038.2     # Starting wavelength (Angstrom)
+cdelt1 = 1.3324     # Dispersion per pixel (Angstrom/pixel)
+
+n_pixels = len(summed_spectrum)
+wavelength = crval1 + cdelt1 * np.arange(n_pixels)
+
+# Plotting
+plt.figure(figsize=(10, 5))
+plt.plot(wavelength, summed_spectrum, label='Comet Spectrum', color='blue')
+plt.title('Background Subtracted and Cleaned Comet Spectrum')
+plt.xlabel('Wavelength (Angstrom)')
+plt.ylabel('Flux (counts/sec)')
+plt.grid(True)
+plt.xlim(3050, 5050)
+plt.legend()
+plt.tight_layout()
+plt.savefig('Comet_cleaned_background_subtracted_vs_Wavelength.png')
+plt.show()
